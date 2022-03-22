@@ -1,0 +1,9 @@
+ Created Azure SQL Deployment pipeline in YAML to reduce operational overhead
+▪ Designed & implemented release management processes with proper branch strategies for Data Engineering team
+▪ Created YAML based pipeline using BICEP to automate Data Factory deployment
+▪ YAML, Powershell scripting using CURL to automate Data Bricks deployment
+▪ Automating build & release in Azure DevOps
+▪ Supporting development of Data Factory pipelines
+▪ DevSecOps implementation along with Snyk & OWASP ZAP
+▪ Handling scrum activities as a scrum master, managing PBIs, handling sprint activities & proper delivery of
+estimated tasks
