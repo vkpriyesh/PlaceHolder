@@ -1,0 +1,53 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "sourceVaultName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the source key vault."
+            }
+        },
+        "destinationVaultName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the destination key vault."
+            }
+        }
+    },
+    "variables": {
+        "sourceVaultId": "[resourceId('Microsoft.KeyVault/vaults', parameters('sourceVaultName'))]",
+        "destinationVaultId": "[resourceId('Microsoft.KeyVault/vaults', parameters('destinationVaultName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[parameters('destinationVaultName')]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "enabledForDeployment": true,
+                "enabledForTemplateDeployment": true
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(parameters('destinationVaultName'), '/', variables('secretName'))]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[variables('destinationVaultId')]"
+            ],
+            "copy": {
+                "name": "copySecrets",
+                "count": "[length(listSecrets(variables('sourceVaultId'), '2016-10-01').value)]",
+                "input": {
+                    "name": "[listSecrets(variables('sourceVaultId'), '2016-10-01').value[copyIndex()].id]",
+                    "value": "[listSecrets(variables('sourceVaultId'), '2016-10-01').value[copyIndex()].value]",
+                    "contentType": "[listSecrets(variables('sourceVaultId'), '2016-10-01').value[copyIndex()].contentType]"
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
