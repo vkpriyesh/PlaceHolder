@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sourceKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing source key vault from which secrets will be copied."
+      }
+    },
+    "destinationKeyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the destination key vault where the secrets will be copied."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "copyLoop",
+      "apiVersion": "2017-05-10",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('destinationKeyVaultName'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "name": "[concat(parameters('destinationKeyVaultName'), '/', copyIndex(), '/', reference(concat('Microsoft.KeyVault/vaults/secrets/', copyIndex()), '2018-02-14').name)]",
+              "apiVersion": "2018-02-14",
+              "copy": {
+                "name": "copyLoop",
+                "count": "[length(listSecrets(parameters('sourceKeyVaultName')).value)]",
+                "input": {
+                  "value": "[reference(concat('Microsoft.KeyVault/vaults/secrets/', copyIndex()), '2018-02-14').value]",
+                  "attributes": {
+                    "enabled": "[reference(concat('Microsoft.KeyVault/vaults/secrets/', copyIndex()), '2018-02-14').attributes.enabled]"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
