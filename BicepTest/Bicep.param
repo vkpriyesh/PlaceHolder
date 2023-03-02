@@ -1,0 +1,12 @@
+param location string = 'southeastasia'
+param keyVaultName string = 'mykeyvault'
+param secrets = [
+  {
+    name: 'DatabricksSecret'
+    value: 'mydatabrickssecret'
+  }
+  {
+    name: 'DatabricksToken'
+    value: 'mydatabrickstoken'
+  }
+]
