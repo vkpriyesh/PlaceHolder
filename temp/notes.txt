@@ -1,0 +1,1 @@
+https://github.com/MicrosoftDocs/azure-devops-docs/blob/main/docs/organizations/security/allow-list-ip-url.md#azure-artifacts
