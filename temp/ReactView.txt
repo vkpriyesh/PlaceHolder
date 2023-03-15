@@ -1,0 +1,39 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+function HackerNews() {
+  const [stories, setStories] = useState([]);
+
+  useEffect(() => {
+    axios.get('https://hacker-news.firebaseio.com/v0/topstories.json')
+      .then(response => {
+        const storyIds = response.data.slice(0, 10); // get the top 10 stories
+        const storyPromises = storyIds.map(id => axios.get(`https://hacker-news.firebaseio.com/v0/item/${id}.json`));
+        Promise.all(storyPromises)
+          .then(storyResponses => {
+            const stories = storyResponses.map(response => response.data);
+            setStories(stories);
+          });
+      });
+  }, []);
+
+  return (
+    <div>
+      <h1>Top Hacker News Stories</h1>
+      <div className="card-container">
+        {stories.map(story => (
+          <div key={story.id} className="card">
+            <h2><a href={story.url}>{story.title}</a></h2>
+            <div className="card-details">
+              <p>Author: {story.by}</p>
+              <p>Score: {story.score}</p>
+              <p>Comments: {story.descendants}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default HackerNews;
