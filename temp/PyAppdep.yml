@@ -1,0 +1,66 @@
+# This is a sample pipeline YAML file for building and releasing a Python app to an Azure Web App with deployment slots.
+# Replace the placeholder values with your own.
+
+trigger:
+- main
+
+variables:
+  azureSubscription: '<Azure Subscription Name>' # Replace with the name of your Azure subscription
+  resourceGroup: '<Resource Group Name>' # Replace with the name of your Azure resource group
+  appName: '<Web App Name>' # Replace with the name of your Azure Web App
+  pythonVersion: '3.8' # Replace with the version of Python you're using
+  slotName: 'staging' # Replace with the name of your deployment slot
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build job
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+        addToPath: true
+      displayName: 'Use Python $(pythonVersion)'
+    - task: PythonScript@0
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: 'build.py' # Replace with the path to your build script
+      displayName: 'Build Python app'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        artifactName: 'drop'
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  jobs:
+  - deployment: DeployWeb
+    displayName: 'Deploy Web App'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment:
+      name: 'Azure Web App'
+      resourceType: 'AzureWebApp'
+      resourceName: $(appName)
+      resourceGroup: $(resourceGroup)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+              addToPath: true
+            displayName: 'Use Python $(pythonVersion)'
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: $(azureSubscription)
+              appName: $(appName)
+              package: '$(Pipeline.Workspace)/drop/*.zip'
+              slotName: $(slotName)
