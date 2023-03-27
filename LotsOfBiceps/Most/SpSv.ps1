@@ -1,3 +1,15 @@
+function New-SecureSecret {
+    param (
+        [int]$length = 41
+    )
+
+    $random = New-Object -TypeName System.Security.Cryptography.RNGCryptoServiceProvider
+    $bytes = New-Object -TypeName 'byte[]' -ArgumentList $length
+    $random.GetBytes($bytes)
+
+    return [System.Convert]::ToBase64String($bytes)
+}
+
 param (
     [string]$applicationName,
     [string]$subscriptionName,
@@ -22,7 +34,7 @@ $servicePrincipal = New-AzADServicePrincipal -ApplicationId $app.ApplicationId
 
 # Create a secret for the App registration
 $secretEndDate = (Get-Date).AddYears(1)
-$secretValue = 'your-secret-value'
+$secretValue = New-SecureSecret
 $secret = New-AzADAppCredential -ApplicationId $app.ApplicationId -EndDate $secretEndDate -Password $secretValue
 
 # Grant contributor role to the service principal at the resource group scope
