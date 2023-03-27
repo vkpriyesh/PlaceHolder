@@ -47,11 +47,11 @@ $subscription = Get-AzSubscription -SubscriptionName $subscriptionName
 # Sign in to Azure DevOps
 $adoPersonalAccessToken = 'your-personal-access-token'
 $organizationUrl = 'https://dev.azure.com/your-organization-name'
-Connect-AzDevOps -Organization $organizationUrl -AccessToken $adoPersonalAccessToken
+$projectName = 'your-project-name'
+$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f "", $adoPersonalAccessToken)))
 
 # Create Azure DevOps service connection
 $serviceConnectionName = "someApp-$applicationName-sc"
-$projectName = 'your-project-name'
 
 $serviceConnection = @{
     name = $serviceConnectionName
@@ -74,4 +74,5 @@ $serviceConnection = @{
     }
 }
 
-Invoke-AzDevOpsRestMethod -Organization $organizationUrl -Project $projectName -Area 'serviceendpoint' -Resource 'endpoints' -Method POST -Body $serviceConnection -ApiVersion '6.0-preview.4'
+$restApiUrl = "$organizationUrl/$projectName/_apis/serviceendpoint/endpoints?api-version=6.0-preview.4"
+$response = Invoke-RestMethod -Uri $restApiUrl -Method Post -ContentType "application/json" -Body (ConvertTo-Json $serviceConnection) -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)}
