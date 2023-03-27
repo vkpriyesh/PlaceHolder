@@ -20,6 +20,11 @@ $app = New-AzADApplication -DisplayName $appDisplayName
 # Create a service principal
 $servicePrincipal = New-AzADServicePrincipal -ApplicationId $app.ApplicationId
 
+# Create a secret for the App registration
+$secretEndDate = (Get-Date).AddYears(1)
+$secretValue = 'your-secret-value'
+$secret = New-AzADAppCredential -ApplicationId $app.ApplicationId -EndDate $secretEndDate -Password $secretValue
+
 # Grant contributor role to the service principal at the resource group scope
 $resourceGroup = Get-AzResourceGroup -Name $resourceGroupName
 New-AzRoleAssignment -ObjectId $servicePrincipal.Id -RoleDefinitionName 'Contributor' -Scope $resourceGroup.ResourceId
@@ -45,7 +50,7 @@ $serviceConnection = @{
             tenantid = $subscription.TenantId
             serviceprincipalid = $app.ApplicationId
             authenticationType = 'spnKey'
-            serviceprincipalkey = $servicePrincipal.Secret
+            serviceprincipalkey = $secretValue
         }
     }
     data = @{
