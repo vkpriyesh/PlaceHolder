@@ -1,81 +1,58 @@
-param appServicePlanName string
-param appServicePlanSku string
-param appServicePlanLocation string
-
-resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
-  name: appServicePlanName
-  location: appServicePlanLocation
-  sku: {
-    name: appServicePlanSku
-    capacity: 1
-  }
-}
-
 param appServiceName string
-param appServiceLocation string
-param appServicePlanId string
-
-resource appService 'Microsoft.Web/sites@2021-02-01' = {
-  name: appServiceName
-  location: appServiceLocation
-  properties: {
-    serverFarmId: appServicePlanId
-  }
-  dependsOn: [
-    appServicePlan
-  ]
-}
-
-param functionAppName string
-param functionAppLocation string
-param functionAppPlanId string
-
-resource functionApp 'Microsoft.Web/sites@2021-02-01' = {
-  name: functionAppName
-  location: functionAppLocation
-  properties: {
-    serverFarmId: functionAppPlanId
-    siteConfig: {
-      appSettings: [
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'dotnet'
-        }
-      ]
-    }
-  }
-  dependsOn: [
-    appServicePlan
-  ]
-}
-
+param appServicePlanName string
+param location string = resourceGroup().location
+param sku string = 'F1'
+param tier string = 'Free'
 
 module appServicePlan './appServicePlan.bicep' = {
-  name: 'appServicePlan'
+  name: 'appServicePlanModule'
   params: {
-    appServicePlanName: 'myAppServicePlan'
-    appServicePlanSku: 'S1'
-    appServicePlanLocation: 'eastus'
+    appServicePlanName: appServicePlanName
+    location: location
+    sku: sku
+    tier: tier
   }
 }
 
 module appService './appService.bicep' = {
-  name: 'appService'
+  name: 'appServiceModule'
   params: {
-    appServiceName: 'myAppService'
-    appServiceLocation: 'eastus'
+    appServiceName: appServiceName
+    location: location
     appServicePlanId: appServicePlan.outputs.appServicePlanId
   }
+  dependsOn: [
+    appServicePlan
+  ]
 }
 
-module functionApp './functionApp.bicep' = {
-  name: 'functionApp'
-  params: {
-    functionAppName: 'myFunctionApp'
-    functionAppLocation: 'eastus'
-    functionAppPlanId: appServicePlan.outputs.appServicePlanId
+param appServicePlanName string
+param location string
+param sku string
+param tier string
+
+resource appServicePlanResource 'Microsoft.Web/serverfarms@2021-02-01' = {
+  name: appServicePlanName
+  location: location
+  sku: {
+    name: sku
+    tier: tier
   }
 }
 
+output appServicePlanId string = appServicePlanResource.id
 
+param appServiceName string
+param location string
+param appServicePlanId string
+
+resource appServiceResource 'Microsoft.Web/sites@2021-02-01' = {
+  name: appServiceName
+  location: location
+  properties: {
+    serverFarmId: appServicePlanId
+  }
+}
+
+output appServiceId string = appServiceResource.id
 
