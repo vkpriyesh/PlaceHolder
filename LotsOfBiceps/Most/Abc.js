@@ -255,4 +255,36 @@ function SignIn() {
 
 export default SignIn;
 
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { PublicClientApplication } from '@azure/msal-browser';
+import { MsalProvider } from '@azure/msal-react';
+
+import App from './App';
+import './index.css';
+
+const msalConfig = {
+  auth: {
+    clientId: process.env.REACT_APP_AZURE_CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${process.env.REACT_APP_AZURE_TENANT_ID}`,
+    redirectUri: window.location.origin,
+  },
+  cache: {
+    cacheLocation: 'localStorage',
+    storeAuthStateInCookie: false,
+  },
+};
+
+const pca = new PublicClientApplication(msalConfig);
+
+ReactDOM.render(
+  <React.StrictMode>
+    <MsalProvider instance={pca}>
+      <App />
+    </MsalProvider>
+  </React.StrictMode>,
+  document.getElementById('root')
+);
+
+
 
