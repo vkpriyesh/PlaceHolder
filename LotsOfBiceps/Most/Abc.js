@@ -213,4 +213,22 @@ Now, you have a React app set up with
 
 Send a message...
 
+function App() {
+  const { accounts } = useMsal();
+  const account = useAccount(accounts[0]);
+
+  return (
+    <div className="App">
+      {!account && <SignIn />}
+      {account && (
+        <>
+          <h1>Accessible Containers</h1>
+          <AccessibleContainers />
+        </>
+      )}
+    </div>
+  );
+}
+
+export default App;
 
