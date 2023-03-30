@@ -232,3 +232,27 @@ function App() {
 
 export default App;
 
+https://storage.azure.com/user_impersonation
+
+import React from "react";
+import { useMsal } from "@azure/msal-react";
+
+function SignIn() {
+  const { instance } = useMsal();
+
+  const handleSignIn = () => {
+    instance.loginRedirect({
+      scopes: ["openid", "profile", "https://storage.azure.com/user_impersonation"],
+    });
+  };
+
+  return (
+    <button onClick={handleSignIn}>
+      Sign In
+    </button>
+  );
+}
+
+export default SignIn;
+
+
