@@ -1,0 +1,46 @@
+# Step 1: Import required libraries
+import os
+import pandas as pd
+from datetime import datetime
+from azure.storage.fileshare import ShareServiceClient
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+
+# Step 2: Set up Azure Key Vault access
+keyvault_url = "https://<your-keyvault-name>.vault.azure.net/"
+credential = DefaultAzureCredential()
+secret_client = SecretClient(vault_url=keyvault_url, credential=credential)
+
+# Step 3: Set up Azure Storage access
+storage_account_name = secret_client.get_secret("storage-account-name").value
+storage_account_key = secret_client.get_secret("storage-account-key").value
+
+share_service_client = ShareServiceClient(account_url=f"https://{storage_account_name}.file.core.windows.net", credential=storage_account_key)
+share_name = "<your-file-share-name>"
+share_client = share_service_client.get_share_client(share_name)
+
+# Step 4: Define a function to get the most recent file with the specified pattern
+def get_most_recent_file(files, prefix):
+    matching_files = [file for file in files if file["name"].startswith(prefix)]
+    if not matching_files:
+        return None
+
+    most_recent_file = max(matching_files, key=lambda x: x["properties"].last_modified)
+    return most_recent_file
+
+# Step 5: Set up a Databricks scheduled job to run the notebook at 1:30 PM daily (done via Databricks UI)
+
+# Step 6: Read the most recent file using pandas
+files = share_client.list_files_and_directories()
+date_today = datetime.now().strftime("_%d%m%y")
+file_prefix = "FileName" + date_today
+
+most_recent_file = get_most_recent_file(files, file_prefix)
+
+if most_recent_file:
+    file_client = share_client.get_file_client(most_recent_file["name"])
+    with file_client.download_file() as file_stream:
+        df = pd.read_csv(file_stream)
+        print(df)
+else:
+    print("No file found with the specified pattern.")
