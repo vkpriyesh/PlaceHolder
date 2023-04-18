@@ -1,0 +1,28 @@
+Import-Module Az.Accounts
+Import-Module Az.Resources
+
+if (-not (Get-AzContext)) {
+    Connect-AzAccount
+}
+
+$apps = Get-AzADApplication
+$expirationThreshold = (Get-Date).AddDays(15)
+
+$result = @()
+
+foreach ($app in $apps) {
+    $secrets = Get-AzADAppCredential -ObjectId $app.ObjectId
+
+    foreach ($secret in $secrets) {
+        $expiryDate = $secret.EndDate
+
+        if ($expiryDate -le $expirationThreshold) {
+            $result += [PSCustomObject]@{
+                ApplicationName = $app.DisplayName
+                ExpiryDate      = $expiryDate
+            }
+        }
+    }
+}
+
+$result | Format-Table -AutoSize
