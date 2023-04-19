@@ -26,3 +26,71 @@ foreach ($app in $apps) {
 }
 
 $result | Format-Table -AutoSize
+
+# Import required modules
+Import-Module Az.Accounts
+Import-Module Az.Resources
+Import-Module Az.SendGrid
+
+# Ensure authenticated to Azure
+if (-not (Get-AzContext)) {
+    Connect-AzAccount
+}
+
+# Get tenant ID and object IDs
+$tenantId = (Get-AzContext).Tenant.Id
+$objectIds = (Get-AzADObject -Filter "objectType eq 'Application' and tenantId eq '$tenantId'").ObjectId
+$expirationThreshold = (Get-Date).AddDays(15)
+
+$result = @()
+
+# Get expiring secrets for each object ID
+foreach ($objectId in $objectIds) {
+    $app = Get-AzADApplication -ObjectId $objectId
+
+    if ($app) {
+        $secrets = Get-AzADAppCredential -ObjectId $objectId
+
+        foreach ($secret in $secrets) {
+            $expiryDate = $secret.EndDate
+
+            if ($expiryDate -le $expirationThreshold) {
+                $result += [PSCustomObject]@{
+                    ApplicationName = $app.DisplayName
+                    ExpiryDate      = $expiryDate
+                }
+            }
+        }
+    }
+}
+
+# Generate HTML table
+$htmlTable = $result | ConvertTo-Html -Property ApplicationName, ExpiryDate -Head "<style>table {border-collapse: collapse;} th, td {border: 1px solid black; padding: 8px; text-align: left;} th {background-color: #f2f2f2;}</style>" | Out-String
+
+# SendGrid API key and email parameters
+$sendGridApiKey = "your_sendgrid_api_key"
+$fromEmail = "you@yourdomain.com"
+$toEmail = "abc@xyz.com"
+$subject = "Expiring Azure AD App Registration Secrets Report"
+
+# Send email using SendGrid
+$sendGridHeader = @{
+    "Authorization" = "Bearer $sendGridApiKey"
+    "Content-Type"  = "application/json"
+}
+
+$body = @{
+    personalizations = @(@{
+        to = @(@{ email = $toEmail })
+    })
+    from = @{
+        email = $fromEmail
+    }
+    subject = $subject
+    content = @(@{
+        type = "text/html"
+        value = $htmlTable
+    })
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post -Uri "https://api.sendgrid.com/v3/mail/send" -Headers $sendGridHeader -Body $body
