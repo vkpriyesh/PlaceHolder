@@ -109,3 +109,20 @@ $htmlTable = $result | ConvertTo-Html -Property ApplicationName, ExpiryDate, @{
 # Add anchor tag to URL
 $htmlTable = $htmlTable -replace '(<td>https?://[^<]+)(</td>)', '<td><a href="$1" target="_blank">$1</a>$2'
 
+$htmlTable = $result | ConvertTo-Html -Property ApplicationName, @{
+    Name       = 'ExpiryDate'
+    Expression = {
+        $expiryDate = $_.ExpiryDate
+        $isExpired = $expiryDate -lt (Get-Date)
+        if ($isExpired) {
+            "<span class='expired'>$expiryDate</span>"
+        } else {
+            "<span class='not-expired'>$expiryDate</span>"
+        }
+    }
+}, @{
+    Name       = 'URL'
+    Expression = { $_.URL }
+} -PreContent "<style>table {border-collapse: collapse;} th, td {border: 1px solid black; padding: 8px; text-align: left;} th {background-color: #f2f2f2;} .expired {color: red;} .not-expired {color: green;}</style>" | Out-String
+
+$htmlTable = $htmlTable -replace '(<td>https?://[^<]+)(</td>)', '<td><a href="$1" target="_blank">$1</a>$2'
