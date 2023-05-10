@@ -1,0 +1,138 @@
+
+// main.bicep
+param location string
+
+module linuxAppServicePlan './linuxAppServicePlan.bicep' = {
+  name: 'linuxAppServicePlanDeployment'
+  params: {
+    location: location
+  }
+}
+
+module angularWebApp './angularWebApp.bicep' = {
+  name: 'angularWebAppDeployment'
+  params: {
+    location: location
+    appServicePlanId: linuxAppServicePlan.outputs.appServicePlanId
+  }
+}
+
+module sqlServer './sqlServer.bicep' = {
+  name: 'sqlServerDeployment'
+  params: {
+    location: location
+  }
+}
+
+module webAppApi './webAppApi.bicep' = {
+  name: 'webAppApiDeployment'
+  params: {
+    location: location
+    appServicePlanId: linuxAppServicePlan.outputs.appServicePlanId
+    sqlServerId: sqlServer.outputs.sqlServerId
+  }
+}
+
+module storageAccount './storageAccount.bicep' = {
+  name: 'storageAccountDeployment'
+  params: {
+    location: location
+  }
+}
+
+// linuxAppServicePlan.bicep
+param location string
+
+resource linuxAppServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
+  name: '***'
+  location: location
+  sku: {
+    name: '***'
+  }
+}
+
+output appServicePlanId string = linuxAppServicePlan.id
+
+
+// angularWebApp.bicep
+param location string
+param appServicePlanId string
+
+resource angularWebApp 'Microsoft.Web/sites@2020-06-01' = {
+  name: '***'
+  location: location
+  properties: {
+    serverFarmId: appServicePlanId
+  }
+}
+
+output webAppId string = angularWebApp.id
+
+// sqlServer.bicep
+param location string
+
+resource sqlServer 'Microsoft.Sql/servers@2020-08-01-preview' = {
+  name: '***'
+  location: location
+  properties: {
+    administratorLogin: '***'
+    administratorLoginPassword: '***'
+  }
+}
+
+resource sqlDB 'Microsoft.Sql/servers/databases@2020-08-01-preview' = {
+  name: '${sqlServer.name}/***'
+  location: location
+  properties: {
+    collation: 'SQL_Latin1_General_CP1_CI_AS'
+    maxsizeBytes: 1073741824
+    requestedServiceObjectiveName: 'S0'
+  }
+}
+
+output sqlServerId string = sqlServer.id
+
+
+// webAppApi.bicep
+param location string
+param appServicePlanId string
+param sqlServerId string
+
+resource webAppApi 'Microsoft.Web/sites@2020-06-01' = {
+  name: '***'
+  location: location
+  properties: {
+    serverFarmId: appServicePlanId
+    siteConfig: {
+      connectionStringNames: [
+        '***'
+      ]
+      connectionStrings: [
+        {
+          name: '***'
+          connectionString: '${sqlServerId}/***'
+          type: 'SQLAzure'
+        }
+      ]
+    }
+  }
+}
+
+output webApiId string = webAppApi.id
+
+// storageAccount.bicep
+param location string
+
+resource storageAccount 'Microsoft.Storage/storageAccounts@2021-04-01' = {
+  name: '***'
+  location: location
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+}
+
+output storageAccountId string = storageAccount.id
+
+
+
