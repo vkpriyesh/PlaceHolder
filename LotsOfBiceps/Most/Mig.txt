@@ -553,3 +553,33 @@ Following these steps, you'll have a new Databricks workspace configured to use 
 2 / 2
 
 Send a message.
+
+When you're migrating your Databricks workspace, you will need to re-establish the connection between the new workspace and your Azure DevOps repository. Here are the steps to take care of:
+
+Identify the Azure DevOps Repository: Identify the Azure DevOps repository connected to your existing Databricks workspace. You will need the repository URL and possibly the branch you're using.
+
+Disconnect the Existing Workspace: It's a good practice to disconnect your existing Databricks workspace from the repository to avoid any unintentional updates or changes once you've migrated to the new workspace.
+
+Connect the New Databricks Workspace: In your new Databricks workspace, you need to re-establish the connection to the Azure DevOps repository.
+
+Follow these steps to connect:
+
+a. In the Databricks workspace, go to the User Settings by clicking on the user icon in the upper right corner.
+
+b. Go to Git Integration.
+
+c. Provide the URL for your Azure DevOps repository.
+
+d. Authenticate with your Azure DevOps credentials.
+
+Update Notebooks and Jobs: If you have any notebooks or jobs that reference the old workspace or specific file paths within the old workspace, you will need to update these to point to the new workspace and the correct file paths within the Azure DevOps repository.
+
+Testing: Finally, test your notebooks and jobs in the new workspace to ensure that the connection to the Azure DevOps repository is working as expected. This includes checking that changes made to code in the repository are reflected in the notebooks in the Databricks workspace, and that jobs are running successfully.
+
+By following these steps, you should be able to smoothly transition your Azure DevOps repository connection from your old Databricks workspace to the new one.
+
+
+
+
+
+Send a message.
