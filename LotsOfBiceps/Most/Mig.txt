@@ -583,3 +583,23 @@ By following these steps, you should be able to smoothly transition your Azure D
 
 
 Send a message.
+
+Here's a step-by-step guide:
+
+Identify affected pipelines: Identify all pipelines that interact with your Databricks workspace. This could include pipelines that deploy notebooks, create or modify clusters, or interact with the workspace in other ways.
+
+Update workspace references: In each affected pipeline, update the references to the Databricks workspace. This could be a workspace URL or a workspace ID, depending on how your pipeline is configured.
+
+Update cluster references: If your pipeline creates or interacts with Databricks clusters, you'll need to update these references as well. This could be a cluster ID or a cluster name. If you've created new clusters in your new workspace, make sure to update these references to point to the new clusters.
+
+Update notebook paths: If your pipeline deploys notebooks to your Databricks workspace, you'll need to update the paths to these notebooks. Make sure that the paths point to the correct location in your new workspace.
+
+Update authentication: If your pipeline uses a Databricks personal access token or Azure Active Directory token for authentication, you'll need to generate a new token in your new workspace and update your pipeline to use this new token.
+
+Test your pipelines: After updating your pipelines, run them to ensure that they are working correctly. Make sure that notebooks are being deployed correctly, that clusters are being created or modified as expected, and that there are no authentication issues.
+
+Monitor your pipelines: After the migration, continue to monitor your pipelines to ensure that they continue to work as expected. If you encounter any issues, investigate and resolve them promptly.
+
+By following these steps, you should be able to successfully update your Azure DevOps pipelines to work with your new Databricks workspace.
+
+Send a message.
