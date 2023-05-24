@@ -24,3 +24,56 @@ steps:
     inlineScript: |
       Set-AzContext -SubscriptionId $(subscriptionId)
       bicep build $(templateFilePath)
+
+steps:
+- checkout: self
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: 'Azure RM Template Deployment'
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(subscriptionId)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroupName)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFileLink: '$(Build.ArtifactStagingDirectory)/main.json'
+    csmParametersFileLink: $(parametersFilePath)
+    
+    
+    stages:
+- stage: Build
+  jobs:
+  - template: build_jobs.yml
+  
+  
+  jobs:
+- job: Build
+  pool:
+    vmImage: 'windows-latest'
+  steps:
+  - template: build_steps.yml
+stages:
+- stage: Release
+  jobs:
+  - template: release_jobs.yml
+  
+  
+jobs:
+- job: Release
+  pool:
+    vmImage: 'windows-latest'
+  steps:
+  - template: release_steps.yml
+
+  trigger:
+- main
+
+extends:
+- template: config.yml
+- template: build_stages.yml
+- template: release_stages.yml
+
+
+    
