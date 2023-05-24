@@ -1,0 +1,26 @@
+
+steps:
+- checkout: self
+
+- task: AzureCLI@2
+  displayName: 'Bicep: Install'
+  inputs:
+    azureSubscription: $(subscriptionId)
+    scriptType: 'pscore'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      Install-Module -Name Az -AllowClobber -Scope CurrentUser
+      New-Item -ItemType Directory -Force -Path $(Pipeline.Workspace)/.azure
+      Set-AzContext -SubscriptionId $(subscriptionId)
+      Install-Module -Name Bicep
+      bicep --help
+
+- task: AzureCLI@2
+  displayName: 'Bicep: Build'
+  inputs:
+    azureSubscription: $(subscriptionId)
+    scriptType: 'pscore'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      Set-AzContext -SubscriptionId $(subscriptionId)
+      bicep build $(templateFilePath)
