@@ -74,3 +74,82 @@ stages:
         WebAppName: 'prod-web-app-name'
         packageForLinux: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
       displayName: 'Deploy to Prod Environment'
+
+trigger:
+- main
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
+stages:
+- stage: Dev
+  displayName: 'Dev'
+  jobs:
+  - job: BuildAndDeploy
+    displayName: 'Build and Deploy'
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build'
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(buildConfiguration)'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish'
+      inputs:
+        command: 'publish'
+        publishWebProjects: true
+        arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: true
+
+    - publish: $(Build.ArtifactStagingDirectory)
+      artifact: drop
+
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'dev-service-connection'
+        appType: 'webApp'
+        WebAppName: 'dev-web-app-name'
+        package: '$(Build.ArtifactStagingDirectory)/**/*.zip'
+      displayName: 'Deploy to Dev Environment'
+
+- stage: Test
+  displayName: 'Test'
+  jobs:
+  - job: Deploy
+    displayName: 'Deploy'
+    steps:
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'test-service-connection'
+        appType: 'webApp'
+        WebAppName: 'test-web-app-name'
+        package: '$(Pipeline.Workspace)/drop/**/*.zip'
+      displayName: 'Deploy to Test Environment'
+
+- stage: Prod
+  displayName: 'Prod'
+  jobs:
+  - job: Deploy
+    displayName: 'Deploy'
+    steps:
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'prod-service-connection'
+        appType: 'webApp'
+        WebAppName: 'prod-web-app-name'
+        package: '$(Pipeline.Workspace)/drop/**/*.zip'
+      displayName: 'Deploy to Prod Environment'
