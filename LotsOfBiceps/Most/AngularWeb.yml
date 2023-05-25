@@ -1,0 +1,76 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  npm_config_cache: $(Pipeline.Workspace)/.npm
+
+stages:
+- stage: Dev
+  displayName: 'Dev'
+  jobs:
+  - job: BuildAndDeploy
+    displayName: 'Build and Deploy'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '14.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm install -g @angular/cli
+        npm install
+        ng build --prod
+      displayName: 'npm install and build'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+
+    - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+      artifact: drop
+
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'dev-service-connection'
+        appType: 'webApp'
+        WebAppName: 'dev-web-app-name'
+        packageForLinux: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      displayName: 'Deploy to Dev Environment'
+
+- stage: Test
+  displayName: 'Test'
+  jobs:
+  - job: Deploy
+    displayName: 'Deploy'
+    steps:
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'test-service-connection'
+        appType: 'webApp'
+        WebAppName: 'test-web-app-name'
+        packageForLinux: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+      displayName: 'Deploy to Test Environment'
+
+- stage: Prod
+  displayName: 'Prod'
+  jobs:
+  - job: Deploy
+    displayName: 'Deploy'
+    steps:
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'prod-service-connection'
+        appType: 'webApp'
+        WebAppName: 'prod-web-app-name'
+        packageForLinux: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+      displayName: 'Deploy to Prod Environment'
