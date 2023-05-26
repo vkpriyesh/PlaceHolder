@@ -1,0 +1,75 @@
+
+trigger:
+  branches:
+    include:
+    - main
+
+variables:
+- group: 'AzureSQLConnection'  # Azure SQL connection string stored as a secret variable group
+
+stages:
+- stage: Dev
+  displayName: 'Dev'
+  jobs:
+  - deployment: Deploy
+    displayName: 'Deploy to Dev'
+    environment: 'Dev'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureSqlDacpacDeployment@1
+            displayName: 'Azure SQL DACPAC Deployment'
+            inputs:
+              azureSubscription: 'YourAzureSubscription'
+              serverName: 'YourAzureSQLServerName'
+              databaseName: 'YourAzureSQLDatabaseName'
+              authenticationType: 'connectionString'
+              connectionString: $(SqlServerConnectionString)
+              dacpacFile: '$(Pipeline.Workspace)/YourDacpacFile.dacpac'
+              additionalArguments: '/p:BlockOnPossibleDataLoss=false'  # Additional arguments for DACPAC deployment
+              upgradeExisting: true
+
+- stage: Test
+  displayName: 'Test'
+  jobs:
+  - deployment: Deploy
+    displayName: 'Deploy to Test'
+    environment: 'Test'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureSqlDacpacDeployment@1
+            displayName: 'Azure SQL DACPAC Deployment'
+            inputs:
+              azureSubscription: 'YourAzureSubscription'
+              serverName: 'YourAzureSQLServerName'
+              databaseName: 'YourAzureSQLDatabaseName'
+              authenticationType: 'connectionString'
+              connectionString: $(SqlServerConnectionString)
+              dacpacFile: '$(Pipeline.Workspace)/YourDacpacFile.dacpac'
+              additionalArguments: '/p:BlockOnPossibleDataLoss=false'  # Additional arguments for DACPAC deployment
+              upgradeExisting: true
+
+- stage: Prod
+  displayName: 'Prod'
+  jobs:
+  - deployment: Deploy
+    displayName: 'Deploy to Prod'
+    environment: 'Prod'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureSqlDacpacDeployment@1
+            displayName: 'Azure SQL DACPAC Deployment'
+            inputs:
+              azureSubscription: 'YourAzureSubscription'
+              serverName: 'YourAzureSQLServerName'
+              databaseName: 'YourAzureSQLDatabaseName'
+              authenticationType: 'connectionString'
+              connectionString: $(SqlServerConnectionString)
+              dacpacFile: '$(Pipeline.Workspace)/YourDacpacFile.dacpac'
+              additionalArguments: '/p:BlockOnPossibleDataLoss=false'  # Additional arguments for DACPAC deployment
+              upgradeExisting: true
