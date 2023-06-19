@@ -1,0 +1,41 @@
+trigger:
+- master
+
+variables:
+  resourceGroupName: 'your-resource-group'
+  automationAccountBicep: 'automationAccount.bicep'
+  location: 'westus'
+
+stages:
+- stage: DeployAutomationAccount
+  jobs:
+  - job: Deploy
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      inputs:
+        deploymentScope: 'Resource Group'
+        azureResourceManagerConnection: 'your-subscription'
+        subscriptionId: 'your-subscription-id'
+        action: 'Create Or Update Resource Group'
+        resourceGroupName: '$(resourceGroupName)'
+        location: '$(location)'
+        templateLocation: 'Linked artifact'
+        csmFile: '$(automationAccountBicep)'
+        deploymentMode: 'Incremental'
+        deploymentOutputs: 'outputs'
+    - pwsh: |
+        Write-Host "##vso[task.setvariable variable=outputs;isOutput=true]$(outputs)"
+
+- stage: PrintOutputs
+  dependsOn: DeployAutomationAccount
+  jobs:
+  - job: Print
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Outputs from DeployAutomationAccount stage:"
+          Write-Host "Automation Account Name: $(stageDependencies.DeployAutomationAccount.Deploy.outputs.AutomationAccountName)"
+          Write-Host "Automation Account Location: $(stageDependencies.DeployAutomationAccount.Deploy.outputs.AutomationAccountLocation)"
+          Write-Host "Automation Account State: $(stageDependencies.DeployAutomationAccount.Deploy.outputs.AutomationAccountState)"
