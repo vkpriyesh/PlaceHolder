@@ -28,3 +28,17 @@
                 ]
             }
         }]}
+# Parse JSON file to get the backend settings list
+$backendSettingsList = (Get-Content -Path 'path_to_your_json_file.json' | ConvertFrom-Json).backendSettingList
+
+# Azure CLI doesn't support creating multiple IP addresses at once, we need to create them one by one.
+foreach ($backendSetting in $backendSettingsList) {
+    $backendPoolName = $backendSetting.name
+    $backendAddresses = $backendSetting.properties.backendAddresses.ipAddress
+    
+    # Iterate over each backend IP address
+    foreach ($backendAddress in $backendAddresses) {
+        # Create a new backend pool
+        az network application-gateway address-pool create --gateway-name "YourApplicationGatewayName" --name $backendPoolName --servers $backendAddress --resource-group "YourResourceGroupName"
+    }
+}
