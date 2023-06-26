@@ -64,4 +64,37 @@ $appGw.BackendAddressPools.Add($backendPool)
 # Update the application gateway
 Set-AzApplicationGateway -ApplicationGateway $appGw
 
+# Variables
+$resourceGroup = "yourResourceGroup"
+$appGwName = "yourAppGw"
+$poolName = "yourBackendPool"
+$backendIPs = @("10.0.0.4", "10.0.0.5")  # replace with your backend IPs
+
+# Fetch the application gateway
+$appGw = Get-AzApplicationGateway -Name $appGwName -ResourceGroupName $resourceGroup
+
+# Create a new backend pool
+$backendPool = New-AzApplicationGatewayBackendAddressPool -Name $poolName
+
+# Check if BackendIPAddresses is null and if so, create a new list
+if ($null -eq $backendPool.BackendIPAddresses) {
+    $backendPool.BackendIPAddresses = New-Object 'system.collections.generic.list[Microsoft.Azure.Commands.Network.Models.PSApplicationGatewayBackendAddress]'
+}
+
+# Add backend addresses to the backend pool
+foreach ($ip in $backendIPs) {
+    $backendAddress = New-AzApplicationGatewayBackendAddress -IpAddress $ip
+    $backendPool.BackendIPAddresses.Add($backendAddress)
+}
+
+# Check if BackendAddressPools is null and if so, create a new list
+if ($null -eq $appGw.BackendAddressPools) {
+    $appGw.BackendAddressPools = New-Object 'system.collections.generic.list[Microsoft.Azure.Commands.Network.Models.PSApplicationGatewayBackendAddressPool]'
+}
+
+# Add the backend pool to the application gateway
+$appGw.BackendAddressPools.Add($backendPool)
+
+# Update the application gateway
+Set-AzApplicationGateway -ApplicationGateway $appGw
 
