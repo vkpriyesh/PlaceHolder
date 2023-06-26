@@ -1,0 +1,30 @@
+{
+    "backendSettingList": [
+        {
+            "name": "bp-a-d1",
+            "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applGws'))]",
+            "properties": {
+                "backendAddresses": [
+                    {
+                        "ipAddress": "8.2.3.1"
+                    },
+                    {
+                        "ipAddress": "8.2.3.1"
+                    },
+                    {
+                        "ipAddress": "8.2.3.1"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "bp-a-d1",
+            "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applGws')))]",
+            "properties": {
+                "backendAddresses": [
+                    {
+                        "ipAddress": "8.9.1.0"
+                    }
+                ]
+            }
+        }]}
