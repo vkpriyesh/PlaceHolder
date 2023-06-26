@@ -97,4 +97,17 @@ $appGw.BackendAddressPools.Add($backendPool)
 
 # Update the application gateway
 Set-AzApplicationGateway -ApplicationGateway $appGw
+# Parse JSON file to get the FQDNs
+$fqdns = (Get-Content -Path 'path_to_your_json_file.json' | ConvertFrom-Json).fqdns
+
+# Iterate over each FQDN
+foreach ($fqdn in $fqdns) {
+    # Resolve the FQDN to an IP address
+    try {
+        $ipAddress = [System.Net.Dns]::GetHostAddresses($fqdn) | Where-Object { $_.AddressFamily -eq 'InterNetwork' } | Select-Object -ExpandProperty IPAddressToString -First 1
+        Write-Host "$fqdn is resolved to IP Address $ipAddress"
+    } catch {
+        Write-Host "Failed to resolve $fqdn to an IP Address"
+    }
+}
 
