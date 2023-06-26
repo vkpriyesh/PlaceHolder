@@ -40,3 +40,28 @@ foreach ($dnsName in $dnsNames) {
         Write-Output "Error resolving $dnsName : $_"
     }
 }
+# Variables
+$resourceGroup = "yourResourceGroup"
+$appGwName = "yourAppGw"
+$poolName = "yourBackendPool"
+$backendIPs = @("10.0.0.4", "10.0.0.5")  # replace with your backend IPs
+
+# Fetch the application gateway
+$appGw = Get-AzApplicationGateway -Name $appGwName -ResourceGroupName $resourceGroup
+
+# Create a new backend pool
+$backendPool = New-AzApplicationGatewayBackendAddressPool -Name $poolName
+
+# Add backend addresses to the backend pool
+foreach ($ip in $backendIPs) {
+    $backendAddress = New-AzApplicationGatewayBackendAddress -IpAddress $ip
+    $backendPool.BackendIPAddresses.Add($backendAddress)
+}
+
+# Add the backend pool to the application gateway
+$appGw.BackendAddressPools.Add($backendPool)
+
+# Update the application gateway
+Set-AzApplicationGateway -ApplicationGateway $appGw
+
+
