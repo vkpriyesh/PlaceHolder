@@ -1,0 +1,59 @@
+steps:
+- task: Npm@1
+  displayName: 'npm install'
+  inputs:
+    verbose: false
+
+- task: Npm@1
+  displayName: 'Build'
+  inputs:
+    command: custom
+    customCommand: 'run build --prod'
+
+steps:
+- task: AzureRmWebAppDeployment@4
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: '$(azureSubscription)'
+    appType: 'webApp'
+    WebAppName: '$(WebAppName)'
+    packageForLinux: '$(Pipeline.Workspace)/**/*.zip'
+    RuntimeStack: 'NODE|16-lts'
+    StartupCommand: 'pm2 serve /home/site/wwwroot --no-daemon'
+
+jobs:
+- job: Build
+  displayName: 'Build job'
+  steps:
+  - template: ../tasks/build_task.yml
+jobs:
+- deployment: Deployment
+  displayName: 'Release job'
+  environment: 'production'
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - template: ../tasks/release_task.yml
+stages:
+- stage: Build
+  displayName: 'Build stage'
+  jobs:
+  - template: ../jobs/build_job.yml
+stages:
+- stage: Deploy
+  displayName: 'Release stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - template: ../jobs/release_job.yml
+trigger:
+- main
+
+variables:
+  azureSubscription: 'Your-Azure-Subscription'
+  WebAppName: 'Your-WebApp-Name'
+
+stages:
+- template: stages/build_stage.yml
+- template: stages/release_stage.yml
