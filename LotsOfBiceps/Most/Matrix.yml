@@ -1,0 +1,22 @@
+trigger:
+- master
+
+parameters:
+- name: services
+  displayName: Services to build and deploy
+  type: object
+  default:
+    runbooks: true
+    api: true
+    app: true
+
+stages:
+
+- ${{ if eq(parameters.services.runbooks, true) }}:
+  - template: ./Release/deploy_runbooks.yml
+
+- ${{ if eq(parameters.services.api, true) }}:
+  - template: ./Release/deploy_dotnet_webapi.yml
+
+- ${{ if eq(parameters.services.app, true) }}:
+  - template: ./Release/deploy_angular_app.yml
