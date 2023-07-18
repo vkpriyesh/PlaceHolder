@@ -49,3 +49,11 @@ Sure, here are more statements about France, two false and one true for each que
     - False: The baguette was originally created in Germany and brought to France.
     - True: France was the first country to introduce the license plate for cars.
     - False: The internet was invented in France.
+
+
+
+French Architecture:
+
+False: The Palace of Versailles is located in Paris.
+True: The Notre-Dame Cathedral, which was severely damaged by a fire in 2019, is a significant example of French Gothic architecture.
+False: The Sacré-Cœur Basilica is an example of modernist architecture.
