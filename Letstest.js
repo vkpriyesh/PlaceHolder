@@ -1,14 +1,10 @@
-const express = require('express');
-const cors = require('cors');
+import { Component, OnInit } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
-const app = express();
-
-// Use this to allow all origins
-app.use(cors());
-
-// OR be specific:
-app.use(cors({
-  origin: 'http://localhost:4200'
-}));
-
-// ... rest of your app code ...
+const httpOptions = {
+  headers: new HttpHeaders({
+    'Content-Type':  'application/json',
+    'Authorization': 'your-auth-token-if-needed',
+    'Origin': 'your-origin-value'
+  })
+};
