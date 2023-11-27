@@ -1,0 +1,86 @@
+Certainly, for a Helm chart with Ingress, Service, Deployment, and ConfigMaps all located within the same directory, you would typically structure your directories and reference files as follows:
+
+```
+nginx-ingress/
+├── charts/
+├── templates/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── ingress.yaml
+│   └── configmap.yaml
+├── Chart.yaml
+└── values.yaml
+```
+
+In the `ingress.yaml` file within the `templates/` directory, you would reference the Service and ConfigMap as needed:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "nginx-ingress.fullname" . }}
+  annotations:
+    nginx.ingress.kubernetes.io/server-snippet: |
+      {{- readFile "configmap.yaml" | nindent 6 }}
+spec:
+  rules:
+  - host: "{{ .Values.ingress.host }}"
+    http:
+      paths:
+      - path: "{{ .Values.ingress.path }}"
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "nginx-ingress.fullname" . }}
+            port:
+              number: {{ .Values.service.port }}
+```
+
+In the `deployment.yaml` file, you might have something like this:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nginx-ingress.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  ...
+```
+
+And your `service.yaml` could look like this:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nginx-ingress.fullname" . }}
+spec:
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: {{ include "nginx-ingress.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+```
+
+The `configmap.yaml` would include the custom error pages or redirection logic:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nginx-ingress.fullname" . }}-errors
+data:
+  server-snippet: |
+    location @custom_400 {
+      return 302 {{ .Values.customErrorPages.custom400 }};
+    }
+    ...
+```
+
+Ensure that your `values.yaml` file contains all necessary values that are referenced in your templates.
+
+To deploy this Helm chart, you would run `helm install nginx-ingress ./nginx-ingress`, assuming your current directory is the parent directory of the `nginx-ingress/` folder.
+
+Remember to adjust the placeholders and values to match the actual configuration of your environment.
