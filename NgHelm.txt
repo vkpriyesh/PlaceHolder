@@ -1,0 +1,198 @@
+Creating a Helm chart for an Azure Nginx ingress controller that is hosted in a container and includes custom error pages for multiple HTTP status code errors would involve several files and configurations. Below is an outline of the directory structure and key files with the necessary content:
+
+1. **Chart Directory Structure**:
+   ```
+   nginx-ingress/
+   ├── charts/
+   ├── templates/
+   │   ├── configmap.yaml
+   │   ├── deployment.yaml
+   │   ├── service.yaml
+   │   └── ...
+   ├── Chart.yaml
+   └── values.yaml
+   ```
+
+2. **Chart.yaml**:
+   ```yaml
+   apiVersion: v2
+   name: nginx-ingress
+   description: A Helm chart for Nginx Ingress on Azure with custom error pages
+   type: application
+   version: 0.1.0
+   ```
+
+3. **values.yaml** (snippet for custom error pages configuration):
+   ```yaml
+   controller:
+     config:
+       custom-http-errors: "400,404,500"
+       error-page-path: "/etc/nginx/html"
+   ```
+
+4. **configmap.yaml** (custom error pages configuration):
+   ```yaml
+   apiVersion: v1
+   kind: ConfigMap
+   metadata:
+     name: nginx-ingress-controller-errors
+   data:
+     400.html: |
+       <!DOCTYPE html>
+       <html>
+       <head><title>400 Bad Request</title></head>
+       <body>
+       <center><h1>400 Bad Request</h1></center>
+       <hr><center>nginx</center>
+       </body>
+       </html>
+     404.html: |
+       # Similar HTML content for 404 error
+     500.html: |
+       # Similar HTML content for 500 error
+   ```
+
+5. **deployment.yaml** (snippet to use the ConfigMap):
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: nginx-ingress-controller
+   spec:
+     ...
+     template:
+       ...
+       spec:
+         containers:
+         - name: nginx-ingress-controller
+           ...
+           volumeMounts:
+           - name: custom-errors
+             mountPath: /etc/nginx/html
+         volumes:
+         - name: custom-errors
+           configMap:
+             name: nginx-ingress-controller-errors
+   ```
+
+You would need to flesh out the other template files (`deployment.yaml`, `service.yaml`, etc.) according to your specific requirements.
+
+For the full configuration, you'll also need the Nginx ingress controller Docker image, which should be specified in the `values.yaml` file under the `image` section, and any additional customization you want to make.
+
+After creating these files with the appropriate content, you would package the chart with `helm package nginx-ingress`, and then it can be deployed with `helm install`.
+
+Please adapt the snippets provided above to fit your specific scenario, as this is just a rough guide to get you started. Always test your Helm charts thoroughly in a non-production environment before deploying them into production.
+
+To set up a redirection URL for custom error pages using an Nginx Ingress controller in Kubernetes, you can use annotations in your Ingress resource definition to specify a default backend service that handles errors. Here's an example of how to set up a redirection for error codes using annotations within your Helm chart's templates:
+
+1. Update the `values.yaml` to include the custom error codes and a default backend service name:
+
+```yaml
+controller:
+  config:
+    custom-http-errors: "400,404,500"
+
+defaultBackend:
+  enabled: true
+  name: custom-error-backend
+  image:
+    repository: nginx
+    tag: latest
+    pullPolicy: IfNotPresent
+  extraArgs:
+    default-backend-service: $(POD_NAMESPACE)/custom-error-backend
+```
+
+2. Create a new backend service and deployment that will handle the errors and perform redirections. You need to add a new file in your templates directory, for example `custom-error-backend.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.defaultBackend.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.defaultBackend.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.defaultBackend.name }}
+    spec:
+      containers:
+      - name: nginx
+        image: "{{ .Values.defaultBackend.image.repository }}:{{ .Values.defaultBackend.image.tag }}"
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: custom-errors
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: custom-errors
+        configMap:
+          name: nginx-ingress-controller-errors
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.defaultBackend.name }}
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: {{ .Values.defaultBackend.name }}
+```
+
+3. Then, update your `configmap.yaml` to include the server-snippet configuration for error handling:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-ingress-controller-errors
+data:
+  server-snippet: |
+    location @custom_400 {
+      return 302 https://example.com/custom_400;
+    }
+    location @custom_404 {
+      return 302 https://example.com/custom_404;
+    }
+    location @custom_500 {
+      return 302 https://example.com/custom_500;
+    }
+    error_page 400 = @custom_400;
+    error_page 404 = @custom_404;
+    error_page 500 = @custom_500;
+```
+
+4. Ensure your Ingress resource uses the default backend for handling errors. This is usually configured in the `ingress.yaml` within the Helm chart:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/default-backend: "{{ .Values.defaultBackend.name }}"
+spec:
+  rules:
+  - host: example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: example-service
+            port:
+              number: 80
+```
+
+Remember to replace `https://example.com/custom_400` and other URLs with the actual redirection targets you want to use.
+
+Deploy this Helm chart with `helm install`, and it will configure your Ingress controller to redirect to the specified URLs upon encountering the specified HTTP error codes.
